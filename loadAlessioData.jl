@@ -201,7 +201,7 @@ function stateInterpolants(states, mutualTimeMask, mutualSpaceMask; dt=2.0, dx=0
 	x0 = dx.*((1:size(mutualSpaceMask,1)).-1)
 	y0 = dy.*((1:size(mutualSpaceMask,2)).-1)
 	
-	stateSplines = [ CubicSplineInterpolation((t0, x0, y0), state[mutualTimeMask,:,:]) for state in states ]
+	stateSplines = [ CubicSplineInterpolation((t0, x0, y0), state[(1:length(mutualTimeMask))[mutualTimeMask],:,:]) for state in states ]
 	
 	return stateSplines
 end
