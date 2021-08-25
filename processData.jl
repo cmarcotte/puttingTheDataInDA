@@ -1,27 +1,26 @@
-#push!(LOAD_PATH,pwd())
 include("loadAlessioData.jl")
 using .loadAlessioData, DelimitedFiles, FortranFiles, Printf, ProgressBars, PyPlot, Peaks, Dierckx, Interpolations
 
-function main(; plotting=true, movie=true)
+function main(; plotting=false, movie=false)
 	
 	# where is the data
 	basepath = "./2011-05-28_Rec78-103_Pace_Apex/"
 	inds = getPossibleIndices(basepath)
 	ind = rand(inds) # This is just useful for debugging; normally you would choose an index
 	
+	# print some diagnostic notices
+	print("Loading data for $(ind)...\t")
+	
 	# load in some data 
 	states = loadFile(basepath, ind)
+	
+	print("Done.\n")
 	
 	# form the space and time masks
 	spaceMasks = [spatialMask(state) for state in states]
 	timeMasks  = [temporalMask(state) for state in states]
 	mutualSpaceMask = mutualMask(spaceMasks)
 	mutualTimeMask = mutualMask(timeMasks)
-	
-	# print some diagnostic notices
-	println("Loading data for $(ind)...")
-	println("states stores EPI  data (recording, masks, etc) in first  index")
-	println("states stores ENDO data (recording, masks, etc) in second index")
 	
 	# make some plots
 	if plotting
@@ -46,14 +45,19 @@ function main(; plotting=true, movie=true)
 	
 	# make a movie of the dynamics
 	if movie
-		recordingMovie(states, spaceMasks, timeMasks; figname="$(ind)")
+		recordingMovie(states, spaceMasks, timeMasks, mutualSpaceMask, mutualTimeMask; figname="$(ind)")
 	end
 
-	# read in observation files, change the obs / err values to interpolated values from input data, write to new obs file
-	# need a loop here which takes 
+	# read in a single observation file as a template
 	obs = readObsFile("./obs/0140.dat")
+	
+	# generate the splines for the spatiotemporal states
 	stateSplines = stateInterpolants(states, mutualTimeMask, mutualSpaceMask)
-	generateObservationFileSequence!(obs, stateSplines, "./obs/test/", "$(ind)", (1:length(mutualTimeMask)[mutualTimeMask]))
+	
+	# interpolate into stateSplines and mutate the observation template and save to new observation files 
+	generateObservationFileSequence!(obs, stateSplines, "./obs/test/", "$(ind)", (1:length(mutualTimeMask))[mutualTimeMask])
+	
+	return nothing
 end
 
 main()

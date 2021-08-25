@@ -280,10 +280,7 @@ function plotState!(fig, axs, t, obs, spaceMasks, timeMasks, N, spacemask, timem
 	return nothing	
 end
 
-function recordingMovie(obs, spaceMasks, timeMasks; figname="recording")
-	
-	timemask = mutualMask(timeMasks)
-	spacemask= mutualMask(spaceMasks)
+function recordingMovie(obs, spaceMasks, timeMasks, spacemask, timemask; figname="recording")
 	
 	N = size(obs[1])
 	
@@ -318,7 +315,7 @@ end
 # Observation file functions
 #
 
-function readObsFile(obsFile::String)
+function readObsFile(obsFile::String; verbose=false)
 	#=
 	obsFile : string for observation filename
 	=#
@@ -327,7 +324,7 @@ function readObsFile(obsFile::String)
 	Obs = [] # accumulator
 	while !eof(f)
 		obs = read(f, (Float32,6));
-		println("Read observation $(obs)")
+		if verbose; println("Read observation $(obs)"); end
 		push!(Obs, obs)
 	end
 	if eof(f)
@@ -336,7 +333,7 @@ function readObsFile(obsFile::String)
 	return Obs
 end
 
-function fillObservations!(obs, stateSplines; theta=0.0, l=3.0, center=[3.5;3.5], min_x = Inf, max_x = 0.0, min_y = Inf, max_y = 0.0)
+function fillObservations!(obs, stateSplines, t; theta=0.0, l=3.0, center=[3.5;3.5], min_x = Inf, max_x = 0.0, min_y = Inf, max_y = 0.0)
 	# states is a Array{Array[Float64,3},1}
 	#	states = [EPI, ENDO]
 	# Obs is a Array{Array{Float32,1},1} where each element of the top array is of form:
@@ -360,7 +357,7 @@ function fillObservations!(obs, stateSplines; theta=0.0, l=3.0, center=[3.5;3.5]
 		max_y = max(max_y, obs[n][4])
 	end
 
-	for n in ProgressBar(1:length(obs))
+	for n in 1:length(obs)
 		
 		# get relative position (within square)
 		x = corners[1,1] + l*cos(theta)*(obs[n][3]-min_x)/(max_x-min_x)
@@ -377,16 +374,16 @@ function fillObservations!(obs, stateSplines; theta=0.0, l=3.0, center=[3.5;3.5]
 	return nothing				# obs is modified in-place
 end
 
-function writeObsFile(obsFile::String, Obs)
+function writeObsFile(obsFile::String, Obs; verbose=false)
 	#=
 	obsFile : string for observation filename
 	Obs: observation array
 	=#
 	f = FortranFile(obsFile, "w")
 	#obs = Array{Float32,1}(undef, 6) # not needed, but useful for reference
-	for n in ProgressBar(1:length(Obs))
+	for n in 1:length(Obs)
 		write(f, Obs[n])
-		println("Wrote observation $(Obs[n]) to \t$(obsFile)")
+		if verbose; println("Wrote observation $(Obs[n])"); end
 	end
 	close(f)
 	return nothing
@@ -396,10 +393,11 @@ function generateObservationFileSequence!(obs, stateSplines, obsDir, sequenceNam
 	#=
 	We loop over the sampleTimes, modifying the template observation array obs, and writing the array to a new obs file	
 	=#
-	
+	println("Writing new observation files to $(obsDir):")
 	for t in ProgressBar(sampleTimes)
-		fillObservations!(obs, stateSplines)
-		writeObsFile(@sprintf("%s/%s_%04d.dat", obsDir, sequenceName, t), obs)
+		fillObservations!(obs, stateSplines, t)
+		obsFile = @sprintf("%s/%s_%04d.dat", obsDir, sequenceName, t)
+		writeObsFile(obsFile, obs)
 	end
 	return nothing
 end
