@@ -49,13 +49,14 @@ function main(; plotting=false, movie=false)
 	end
 
 	# read in a single observation file as a template
-	obs = readObsFile("./obs/0140.dat")
+	obs = readObsFile("./obs/template.dat")
 	
 	# generate the splines for the spatiotemporal states
 	stateSplines = stateInterpolants(states, mutualTimeMask, mutualSpaceMask)
 	
 	# interpolate into stateSplines and mutate the observation template and save to new observation files 
-	generateObservationFileSequence!(obs, stateSplines, "./obs/test/", "$(ind)", (1:length(mutualTimeMask))[mutualTimeMask])
+	newObsDir = "./obs/$(ind)/"; mkdir(newObsDir);
+	generateObservationFileSequence!(obs, stateSplines, newObsDir, "", (1:length(mutualTimeMask))[mutualTimeMask])
 	
 	return nothing
 end

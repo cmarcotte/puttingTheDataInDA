@@ -333,7 +333,7 @@ function readObsFile(obsFile::String; verbose=false)
 	return Obs
 end
 
-function fillObservations!(obs, stateSplines, t; theta=0.0, l=3.0, center=[3.5;3.5], min_x = Inf, max_x = 0.0, min_y = Inf, max_y = 0.0)
+function fillObservations!(obs, stateSplines, t; theta=0.0, l=3.0, center=[3.5;3.5], min_x = Inf, max_x = 0.0, min_y = Inf, max_y = 0.0, err = 0.025)
 	# states is a Array{Array[Float64,3},1}
 	#	states = [EPI, ENDO]
 	# Obs is a Array{Array{Float32,1},1} where each element of the top array is of form:
@@ -369,7 +369,7 @@ function fillObservations!(obs, stateSplines, t; theta=0.0, l=3.0, center=[3.5;3
 			obs[n][5] = stateSplines[2](t,x,y)
 		end
 		
-		obs[n][6] = 0.0 		# What is the error in the observation here
+		obs[n][6] = err 		# What is the error in the observation here
 	end
 	return nothing				# obs is modified in-place
 end
@@ -396,7 +396,7 @@ function generateObservationFileSequence!(obs, stateSplines, obsDir, sequenceNam
 	println("Writing new observation files to $(obsDir):")
 	for t in ProgressBar(sampleTimes)
 		fillObservations!(obs, stateSplines, t)
-		obsFile = @sprintf("%s/%s_%04d.dat", obsDir, sequenceName, t)
+		obsFile = @sprintf("%s/%s%04d.dat", obsDir, sequenceName, t)
 		writeObsFile(obsFile, obs)
 	end
 	return nothing
