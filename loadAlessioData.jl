@@ -11,7 +11,7 @@ module loadAlessioData
 #      /--------------------------\  /------------------\  /----\  /----------------------------\   
 using DelimitedFiles, FortranFiles, Printf, ProgressBars, PyPlot, Peaks, Dierckx, Interpolations
 
-export getPossibleIndices, loadFile, spatialMask, temporalMask, mutualMask, sampleData, plotTrace!, plotState!, recordingMovie, readObsFile, stateInterpolants, generateObservationFileSequence!
+export getPossibleIndices, loadFile, spatialMask, temporalMask, mutualMask, sampleData, plotTrace!, plotState!, recordingMovie, readObsFile, stateInterpolants, generateObservationFileSequence!, spatialMaskCentroid, plotSamplingSquare!
 
 #
 # Convenience functions to identify the available data files and load the data consistently
@@ -131,6 +131,16 @@ function mutualMask(masks)
 	return mutmask 
 end
 
+function spatialMaskCentroid(mask; dx=0.06)
+
+	N = size(mask)
+	ctr = 0.0;
+	for x in 1:N[1], y in 1:N[2]
+		ctr += (x + y*im)*mask[x,y];
+	end
+	return Int.(round.([imag(ctr), real(ctr)]./sum(mask))).*dx # note the swap in real/imag
+end
+
 #
 # Sampling functions
 #
@@ -195,9 +205,9 @@ function peaks(V; minimumProminence=0.9)
 end
 
 function stateInterpolants(states, mutualTimeMask, mutualSpaceMask; dt=2.0, dx=0.06, dy=0.06)
-
+	
 	tlims = (1:length(mutualTimeMask))[mutualTimeMask][[1;end]]
-	t0 = dt.*(0:(tlims[2]-tlims[1]))
+	t0 = dt.*(tlims[1]:tlims[2])
 	x0 = dx.*((1:size(mutualSpaceMask,1)).-1)
 	y0 = dy.*((1:size(mutualSpaceMask,2)).-1)
 	
@@ -208,10 +218,26 @@ end
 
 function square(;theta=0.0, l=3.0, center=[3.5;3.5])
 	# generates the bounding corners (with first and last repeating) of the square for sampling the states
+	if theta ≠ 0.0
+		@warn "θ ≠ 0 is currently unimplemented, sorry!"
+	end
+	if abs(theta) >= pi/2
+		@warn "θ is mapped to (-π/2,+π/2)"
+		theta = mod(theta, pi/2)
+	end
 	corners = center .+ l .* ([cos(theta) sin(theta); -sin(theta) cos(theta)] * [-1 1 1 -1; -1 -1 1 1]./2);
 	corners = hcat(corners[:,:], corners[:,1])
 
 	return corners
+end
+
+function coordinateVectors(corners)
+	# corners should be generated from the square function
+	# corners = square(theta=theta, l=l, center=center)
+	x⃗ = corners[:,2].-corners[:,1]
+	y⃗ = corners[:,4].-corners[:,1]
+	# s.t.  ∀(a,b) ∈ [-0.5, +0.5]: center .+ a.*x⃗ .+ b.*y⃗ ∈ square
+	return (x⃗, y⃗)
 end
 
 #
@@ -280,6 +306,14 @@ function plotState!(fig, axs, t, obs, spaceMasks, timeMasks, N, spacemask, timem
 	return nothing	
 end
 
+function plotSamplingSquare!(fig, axs, corners)
+
+	axs[1].plot(corners[1,:]./0.06, corners[2,:]./0.06, "--k", linewidth=1)
+	axs[2].plot(corners[1,:]./0.06, corners[2,:]./0.06, "--k", linewidth=1)
+
+	return nothing
+end
+
 function recordingMovie(obs, spaceMasks, timeMasks, spacemask, timemask; figname="recording")
 	
 	N = size(obs[1])
@@ -333,7 +367,7 @@ function readObsFile(obsFile::String; verbose=false)
 	return Obs
 end
 
-function fillObservations!(obs, stateSplines, t; theta=0.0, l=3.0, center=[3.5;3.5], min_x = Inf, max_x = 0.0, min_y = Inf, max_y = 0.0, err = 0.025)
+function fillObservations!(obs, stateSplines, t; theta=0.0, l=3.0, center=[3.5;3.5], min_x = 0, max_x = 200, min_y = 0, max_y = 200, err = 0.025)
 	# states is a Array{Array[Float64,3},1}
 	#	states = [EPI, ENDO]
 	# Obs is a Array{Array{Float32,1},1} where each element of the top array is of form:
@@ -349,24 +383,18 @@ function fillObservations!(obs, stateSplines, t; theta=0.0, l=3.0, center=[3.5;3
 	
 	corners = square(theta=theta, l=l, center=center)
 
-	# compute bounds to scale the observation indices to the square
-	for n=1:length(obs)
-		min_x = min(min_x, obs[n][3])
-		max_x = max(max_x, obs[n][3])
-		min_y = min(min_y, obs[n][4])
-		max_y = max(max_y, obs[n][4])
-	end
-
 	for n in 1:length(obs)
 		
 		# get relative position (within square)
-		x = corners[1,1] + l*cos(theta)*(obs[n][3]-min_x)/(max_x-min_x)
-		y = corners[2,1] + l*sin(theta)*(obs[n][4]-min_y)/(max_y-min_y)
+		#x = corners[1,1] + l*cos(theta)*(obs[n][3]-min_x)/(max_x-min_x)
+		#y = corners[2,1] + l*sin(theta)*(obs[n][4]-min_y)/(max_y-min_y)
+		x = corners[1,1] + (corners[1,2]-corners[1,1])*(obs[n][3]-min_x)/(max_x-min_x)
+		y = corners[2,1] + (corners[2,3]-corners[2,1])*(obs[n][4]-min_y)/(max_y-min_y)
 		
 		if obs[n][2] == 1.0		# if on bottom => EPI sample
-			obs[n][5] = stateSplines[1](t,x,y)
+			obs[n][5] = stateSplines[1](t,y,x)
 		elseif obs[n][2] == 50.0	# if on top => ENDO sample
-			obs[n][5] = stateSplines[2](t,x,y)
+			obs[n][5] = stateSplines[2](t,y,x)
 		end
 		
 		obs[n][6] = err 		# What is the error in the observation here
@@ -374,7 +402,7 @@ function fillObservations!(obs, stateSplines, t; theta=0.0, l=3.0, center=[3.5;3
 	return nothing				# obs is modified in-place
 end
 
-function writeObsFile(obsFile::String, Obs; verbose=false)
+function writeObsFile(obsFile::String, Obs)
 	#=
 	obsFile : string for observation filename
 	Obs: observation array
@@ -383,19 +411,21 @@ function writeObsFile(obsFile::String, Obs; verbose=false)
 	#obs = Array{Float32,1}(undef, 6) # not needed, but useful for reference
 	for n in 1:length(Obs)
 		write(f, Obs[n])
-		if verbose; println("Wrote observation $(Obs[n])"); end
+		@debug "Wrote observation $(Obs[n])"
 	end
 	close(f)
+	@debug "Wrote observation file $(obsFile)"
 	return nothing
 end
 
-function generateObservationFileSequence!(obs, stateSplines, obsDir, sequenceName, sampleTimes)
+function generateObservationFileSequence!(obs, stateSplines, obsDir, sequenceName, sampleTimes; theta=0.0, l=3.0, center=[3.5;3.5], min_x = 0, max_x = 200, min_y = 0, max_y = 200, err = 0.025)
 	#=
 	We loop over the sampleTimes, modifying the template observation array obs, and writing the array to a new obs file	
 	=#
+	@show center
 	println("Writing new observation files to $(obsDir):")
 	for t in ProgressBar(sampleTimes)
-		fillObservations!(obs, stateSplines, t)
+		fillObservations!(obs, stateSplines, t; theta=theta, l=l, center=center, min_x = min_x, max_x = max_x, min_y = min_y, max_y = max_y, err = 0.025)
 		obsFile = @sprintf("%s/%s%04d.dat", obsDir, sequenceName, t)
 		writeObsFile(obsFile, obs)
 	end

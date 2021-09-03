@@ -1,7 +1,7 @@
 include("loadAlessioData.jl")
 using .loadAlessioData, DelimitedFiles, FortranFiles, Printf, ProgressBars, PyPlot, Peaks, Dierckx, Interpolations
 
-function main(; plotting=false, movie=false)
+function main(; plotting=true, movie=false)
 	
 	# where is the data
 	basepath = "./2011-05-28_Rec78-103_Pace_Apex/"
@@ -22,6 +22,10 @@ function main(; plotting=false, movie=false)
 	mutualSpaceMask = mutualMask(spaceMasks)
 	mutualTimeMask = mutualMask(timeMasks)
 	
+	# determine mutualSpaceMask centroid for square center
+	center = spatialMaskCentroid(mutualSpaceMask)
+	corners = loadAlessioData.square(theta=0.0, l=3.0, center=center)
+	
 	# make some plots
 	if plotting
 	# sampling position is randomly sampled and checked against mutual space mask
@@ -38,7 +42,8 @@ function main(; plotting=false, movie=false)
 		# plotting a single state at a prescribed time
 		sampleTime = rand((1:length(mutualTimeMask))[mutualTimeMask])
 		fig, axs = plt.subplots(1,2,figsize=(8,3),constrained_layout=true)
-		plotState!(fig, axs, sampleTime, states, spaceMasks, timeMasks, [size(state) for state in states], mutualMask(spaceMasks), mutualMask(timeMasks); drawColorbar=true)
+		plotState!(fig, axs, sampleTime, states, spaceMasks, timeMasks, [size(state) for state in states], mutualSpaceMask, mutualTimeMask; drawColorbar=true)
+		plotSamplingSquare!(fig, axs, corners)
 		plt.savefig("./state/$(ind)_state.svg", bbox_inches="tight")
 		plt.close()
 	end
@@ -55,8 +60,9 @@ function main(; plotting=false, movie=false)
 	stateSplines = stateInterpolants(states, mutualTimeMask, mutualSpaceMask)
 	
 	# interpolate into stateSplines and mutate the observation template and save to new observation files 
-	newObsDir = "./obs/$(ind)/"; mkdir(newObsDir);
-	generateObservationFileSequence!(obs, stateSplines, newObsDir, "", (1:length(mutualTimeMask))[mutualTimeMask])
+	newObsDir = "./obs/$(ind)/"; mkpath(newObsDir);
+	sampleTimes = 2.0.*(1:length(mutualTimeMask))[mutualTimeMask]
+	generateObservationFileSequence!(obs, stateSplines, newObsDir, "", sampleTimes; center = center)
 	
 	return nothing
 end
