@@ -6,7 +6,7 @@ function main(; plotting=true, movie=false)
 	# where is the data
 	basepath = "./2011-05-28_Rec78-103_Pace_Apex/"
 	inds = getPossibleIndices(basepath)
-	ind = 106 #rand(inds) # This is just useful for debugging; normally you would choose an index
+	ind = rand(inds) # This is just useful for debugging; normally you would choose an index
 	
 	# print some diagnostic notices
 	print("Loading data for $(ind)...\t")
