@@ -145,7 +145,7 @@ end
 # Sampling functions
 #
 
-function sampleData(obs, sampleIndex::Array{T,1}, mutualTimeMask, mutualSpaceMask) where T <: Integer
+function sampleData(obs, sampleIndex::Array{T,1}, mutualTimeMask, mutualSpaceMask; dt=2.0) where T <: Integer
 	# generates (t,V(t)) arrays for EPI and ENDO recordings in obs
 	# first check that the spatial indices are valid
 	@assert mutualSpaceMask[sampleIndex[1],sampleIndex[2]] == true
@@ -154,7 +154,7 @@ function sampleData(obs, sampleIndex::Array{T,1}, mutualTimeMask, mutualSpaceMas
 	# select obs[t, sampleIndex[1], sampleIndex[2]] for EPI and ENDO
 	V = [obs[n][t, sampleIndex[1], sampleIndex[2]] for n=1:2]
 	
-	return (t, V)
+	return (t.*dt, V)
 end
 
 function sampleData(obs, samplePoint::Array{T,1}, mutualTimeMask, mutualSpaceMask; h=0.02) where T <: AbstractFloat
@@ -424,9 +424,9 @@ function generateObservationFileSequence!(obs, stateSplines, obsDir, sequenceNam
 	=#
 	@show center
 	println("Writing new observation files to $(obsDir):")
-	for t in ProgressBar(sampleTimes)
+	for (n,t) in ProgressBar(enumerate(sampleTimes))
 		fillObservations!(obs, stateSplines, t; theta=theta, l=l, center=center, min_x = min_x, max_x = max_x, min_y = min_y, max_y = max_y, err = 0.025)
-		obsFile = @sprintf("%s/%s%04d.dat", obsDir, sequenceName, t)
+		obsFile = @sprintf("%s/%s%04d.dat", obsDir, sequenceName, n)
 		writeObsFile(obsFile, obs)
 	end
 	return nothing
