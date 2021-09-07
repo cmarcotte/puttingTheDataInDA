@@ -1,7 +1,7 @@
 include("loadAlessioData.jl")
 using .loadAlessioData, DelimitedFiles, FortranFiles, Printf, ProgressBars, PyPlot, Peaks, Dierckx, Interpolations
 
-function main(; plotting=true, movie=false)
+function main(; plotting=false, movie=false, outputObs=true)
 	
 	# where is the data
 	basepath = "./2011-05-28_Rec78-103_Pace_Apex/"
@@ -53,18 +53,21 @@ function main(; plotting=true, movie=false)
 		recordingMovie(states, spaceMasks, timeMasks, mutualSpaceMask, mutualTimeMask; figname="$(ind)")
 	end
 
-	# read in a single observation file as a template
-	obs = readObsFile("./obs/template.dat")
-	
-	# generate the splines for the spatiotemporal states
-	stateSplines = stateInterpolants(states, mutualTimeMask, mutualSpaceMask)
-	
-	# interpolate into stateSplines and mutate the observation template and save to new observation files 
-	newObsDir = "./obs/$(ind)/"; mkpath(newObsDir);
-	sampleTimes = 2.0.*(1:length(mutualTimeMask))[mutualTimeMask]
-	generateObservationFileSequence!(obs, stateSplines, newObsDir, "", sampleTimes; center = center)
+	# output observations
+	if outputObs
+		# read in a single observation file as a template
+		obs = readObsFile("./obs/template.dat")
+		
+		# generate the splines for the spatiotemporal states
+		stateSplines = stateInterpolants(states, mutualTimeMask, mutualSpaceMask)
+		
+		# interpolate into stateSplines and mutate the observation template and save to new observation files 
+		newObsDir = "./obs/$(ind)/"; mkpath(newObsDir);
+		sampleTimes = 2.0.*(1:length(mutualTimeMask))[mutualTimeMask]
+		generateObservationFileSequence!(obs, stateSplines, newObsDir, "", sampleTimes; center = center)
+	end
 	
 	return nothing
 end
 
-main()
+main(;plotting=true, outputObs=false)
