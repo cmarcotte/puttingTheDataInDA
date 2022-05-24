@@ -204,6 +204,16 @@ function peaks(V; minimumProminence=0.9)
 	return (inds, pks, proms)
 end
 
+# this is convenient, but expensive, and the interpolant it returns only throws when the indices are outside the span; ideally it would throw if mutualSpaceMask == false, too.
+function generateCompleteInterpolant(states, mutualSpaceMask, mutualTimeMask; dt=2.0, dx=0.06, Nz=50) # ms and cm, respectively; Nz is number of dx-layers between epi and endo
+	# generates a single data interpolant across time and space)
+	it = (1:length(mutualTimeMask))[mutualTimeMask]
+	u = cat(states[1][it,:,:], states[2][it,:,:]; dims=4) # huge temporary array; probably a way to avoid?
+	itp = LinearInterpolation((dt.*(1:length(it)), (1:128).*dx, (1:128).*dx, [1,Nz]*dx), u) # repackages that same huge array
+	# now itp(t::T, x::T, y::T, z::T) where T <: Real gives u(t,x,y,z) for the dataset
+	return itp
+end
+
 function stateInterpolants(states, mutualTimeMask, mutualSpaceMask; dt=2.0, dx=0.06, dy=0.06)
 	
 	tlims = (1:length(mutualTimeMask))[mutualTimeMask][[1;end]]
