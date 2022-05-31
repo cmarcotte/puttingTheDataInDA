@@ -205,11 +205,11 @@ function peaks(V; minimumProminence=0.9)
 end
 
 # this is convenient, but expensive, and the interpolant throws when (t,x,y,z) are outside the available ranges, but doesn't tell you what those ranges are.
-function generateCompleteInterpolant(states, mutualSpaceMask, mutualTimeMask; dt=2.0, dx=0.06, Nz=50) # ms and cm, respectively; Nz is number of dx-layers between epi and endo
+function generateCompleteInterpolant(states, mutualSpaceMask, mutualTimeMask; dt=2.0, dx=0.06, dz=1.0) # ms and cm, respectively; dz is thickness of tissue
 	# generates a single data interpolant across time and space)
 	it = (1:length(mutualTimeMask))[mutualTimeMask]
 	u = cat(states[1][it,:,:], states[2][it,:,:]; dims=4) # huge temporary array; probably a way to avoid?
-	itp = LinearInterpolation((dt.*(1:length(it)), (1:128).*dx, (1:128).*dx, [1,Nz]*dx), u) # repackages that same huge array
+	itp = LinearInterpolation((dt.*(0:length(it)-1), (0:127).*dx, (0:127).*dx, [0,dz]), u) # repackages that same huge array
 	# now itp(t::T, x::T, y::T, z::T) where T <: Real gives u(t,x,y,z) for the dataset
 	# we we'd like to filter out calls that are outside mutualSpaceMask (the mutualTimeMask already throws in the interpolant).
 	# so we can first construct a function which filters the space indices as well.
