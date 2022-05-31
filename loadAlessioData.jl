@@ -213,15 +213,15 @@ function generateCompleteInterpolant(states, mutualSpaceMask, mutualTimeMask; dt
 	# now itp(t::T, x::T, y::T, z::T) where T <: Real gives u(t,x,y,z) for the dataset
 	# we we'd like to filter out calls that are outside mutualSpaceMask (the mutualTimeMask already throws in the interpolant).
 	# so we can first construct a function which filters the space indices as well.
-	function interpolant(t,x,y,z)
-		if mutualSpaceMask[Int(round(y/dx)),Int(round(x/dx))]
-			return itp(t,x,y,z)
-		else
-			error("(x,y) coordinate outside mutualSpaceMask")
-		end	
-	end
-	
-	return interpolant
+	#function interpolant(t,x,y,z)
+	#	if mutualSpaceMask[Int(round(y/dx)),Int(round(x/dx))]
+	#		return itp(t,x,y,z)
+	#	else
+	#		error("(x,y) coordinate outside mutualSpaceMask")
+	#	end	
+	#end
+	#return interpolant
+	return itp
 end
 
 function stateInterpolants(states, mutualTimeMask, mutualSpaceMask; dt=2.0, dx=0.06, dy=0.06)
