@@ -1,9 +1,7 @@
 [deps]
-DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
-Dierckx = "39dd38d3-220a-591b-8e3c-4c3a8c710a94"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 FortranFiles = "c58ffaec-ab22-586d-bfc5-781a99fd0b10"
-Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-Peaks = "18e31ff7-3703-566c-8e60-38913d67486b"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
 PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
