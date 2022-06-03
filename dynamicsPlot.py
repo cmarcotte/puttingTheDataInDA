@@ -25,11 +25,16 @@ workDir = f"/data/{args.workDir}"
 
 import readData
 
-times = range(1,1001)
-
 meanDir = f"{workDir}/gues/mean/"
 sprdDir = f"{workDir}/gues/sprd/"
 obsDir  = f"{workDir}/obs/"
+
+import os
+n_dirs = 0
+for root, dirs, files in os.walk(meanDir, topdown=True):
+        n_dirs += len(dirs)
+times = range(1,n_dirs+1)
+times = range(1,1001)
 
 # pre-allocate (are these going to be written to or just over-written and re-allocated? python...)
 gU = np.zeros((200,200,50))

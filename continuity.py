@@ -25,9 +25,14 @@ workDir = f"/data/{args.workDir}"
 
 import readData
 
-times = range(1,1001)
-
 meanDir = f"{workDir}/gues/mean/"
+
+import os
+n_dirs = 0
+for root, dirs, files in os.walk(meanDir, topdown=True):
+        n_dirs += len(dirs)
+times = range(1,n_dirs+1)
+times = range(1,1001)
 
 hx = 0.015
 

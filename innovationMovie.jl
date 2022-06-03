@@ -13,15 +13,6 @@ PyPlot.matplotlib.rcParams["ytick.labelsize"] = 9
 const sw = 3.40457
 const dw = 7.05826
 
-function innovationFrame(fig, axs, n::Int, t::T, 
-				gu::Array{T,3}, gv::Array{T,3}, gw::Array{T,3}, 
-				au::Array{T,3}, av::Array{T,3}, aw::Array{T,3}; 
-				zs=[1,10,20,30,40,50], dx=0.015, dt=2.0) where T <: AbstractFloat
-
-
-
-end
-
 function innovationMovie(workDir, zs = [1,10,20,30,40,50]; dx=0.015, dt=2.0)
 		
 	gu = rand(Float64,nx,ny,nz)
@@ -114,8 +105,9 @@ end
 function main(; baseDir="/data")
 	parsed_args = parse_commandline()
 	workDir = parsed_args["workDir"]
-	#print("This is 7× faster than the Python implementation!\n")	
+	#print("This is >7.23-1.25× faster than the Python implementation!\n")	
 	innovationMovie(workDir)    
+	print("\n")
 end
 
 main()

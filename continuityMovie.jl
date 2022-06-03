@@ -100,8 +100,9 @@ end
 function main(; baseDir="/data")
 	parsed_args = parse_commandline()
 	workDir = parsed_args["workDir"]
-	#print("This is 1.4× faster than the Python implementation!\n")	
+	#print("This is >1.5-1.3× faster than the Python implementation!\n")	
 	continuityMovie(workDir)    
+	print("\n")
 end
 
 main()

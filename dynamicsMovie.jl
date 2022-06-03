@@ -137,8 +137,9 @@ function main(; baseDir="/data")
 	#catch
 		obsDir = "/data/$(workDir)/obs"
 	#end
-	#print("This is 6× faster than the Python implementation!\n")	
+	#print("This is >5.43-1.22× faster than the Python implementation!\n")	
 	dynamicsMovie(workDir, obsDir)    
+	print("\n")
 end
 
 main()

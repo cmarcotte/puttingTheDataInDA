@@ -124,8 +124,9 @@ function main(; baseDir="/data")
 	workDir = parsed_args["workDir"]
 	obsDir = "/data/$(workDir)/obs"
 	
-	#print("This is ?× faster than the Python implementation!\n")	
+	#print("This is >3.86-1.17× faster than the Python implementation!\n")	
 	errorPlot(workDir, obsDir)    
+	print("\n")
 end
 
 main()
